@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Menu — FoodOrder{% endblock %}
+
+{% block content %}
+<form method="GET" class="flex flex-wrap gap-3 items-center mb-6">
+  <input type="text" name="q" value="{{ query }}" placeholder="Search dishes..."
+         class="flex-1 min-w-[160px] border border-gray-300 rounded-lg px-3 py-2 text-sm">
+  <select name="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    <option value="">All categories</option>
+    {% for c in categories %}
+    <option value="{{ c }}" {{ 'selected' if c == selected_category else '' }}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <select name="sort" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    <option value="">Sort</option>
+    <option value="price_asc" {{ 'selected' if sort == 'price_asc' else '' }}>Price: low to high</option>
+    <option value="price_desc" {{ 'selected' if sort == 'price_desc' else '' }}>Price: high to low</option>
+    <option value="rating" {{ 'selected' if sort == 'rating' else '' }}>Top rated</option>
+  </select>
+  <button class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg">
+    Apply
+  </button>
+</form>
+
+<p class="text-sm text-gray-500 mb-4">
+  Showing {{ start_index }}–{{ end_index }} of {{ total_count }} items
+</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+  {% for product in products %}
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+    <img src="{{ url_for('static', filename='images/' + product.images[0]) }}"
+         onerror="this.src='https://placehold.co/300x180?text=%F0%9F%8D%94'"
+         class="w-full h-36 object-cover bg-gray-100">
+    <div class="p-4 flex flex-col flex-1">
+      {% if product.badge %}
+      <span class="text-[10px] font-semibold uppercase text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full w-fit mb-1">
+        {{ product.badge }}
+      </span>
+      {% endif %}
+      <a href="{{ url_for('product_page', product_id=product.id) }}" class="font-semibold hover:text-orange-500">
+        {{ product.name }}
+      </a>
+      <p class="text-xs text-gray-500 mb-2">{{ product.category }} · ⭐ {{ product.rating }}</p>
+      <div class="mt-auto flex items-center justify-between">
+        <span class="font-semibold">Rs {{ product.price }}</span>
+        <button onclick="addToCart({{ product.id }})"
+                class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg">
+          Add to cart
+        </button>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-gray-400 col-span-full text-center py-10">No dishes match your search.</p>
+  {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="flex items-center justify-center gap-1 mt-8 text-sm">
+  {% for p in page_range %}
+    {% if p == '...' %}
+      <span class="px-2 text-gray-400">…</span>
+    {% elif p == page %}
+      <span class="px-3 py-1.5 rounded-lg bg-orange-500 text-white font-semibold">{{ p }}</span>
+    {% else %}
+      <a href="{{ url_for('products_page', q=query, category=selected_category, sort=sort, page=p) }}"
+         class="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100">{{ p }}</a>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

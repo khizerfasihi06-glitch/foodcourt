@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Order confirmed — FoodOrder{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto text-center">
+  <div class="text-5xl mb-3">🛵</div>
+  <h1 class="text-2xl font-bold mb-1">Order confirmed!</h1>
+  <p class="text-gray-500 mb-1">Your rider is on the way.</p>
+  {% if order.order_id %}
+  <p class="text-xs text-gray-400 mb-6">Order ID: {{ order.order_id }}</p>
+  {% else %}
+  <p class="mb-6"></p>
+  {% endif %}
+
+  <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm mb-6">
+    <p class="text-sm text-gray-500 mb-1">Estimated arrival</p>
+    <p id="countdown" class="text-4xl font-bold text-orange-500 tabular-nums">--:--</p>
+    <div class="w-full bg-gray-100 rounded-full h-2 mt-4 overflow-hidden">
+      <div id="progress-bar" class="bg-orange-500 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-100 rounded-2xl p-5 text-left">
+    <h2 class="font-semibold mb-3">Order summary</h2>
+    <div class="space-y-2">
+      {% for item in order.line_items %}
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-600">{{ item.qty }} × {{ item.name }}</span>
+        <span class="font-medium">Rs {{ item.subtotal }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="border-t border-gray-100 mt-3 pt-3 flex justify-between font-semibold">
+      <span>Total</span>
+      <span>Rs {{ order.total }}</span>
+    </div>
+  </div>
+
+  {% if order.delivery and (order.delivery.name or order.delivery.address) %}
+  <div class="bg-white border border-gray-100 rounded-2xl p-5 text-left mt-4">
+    <h2 class="font-semibold mb-3">Delivering to</h2>
+    <p class="text-sm text-gray-700">{{ order.delivery.name }}</p>
+    <p class="text-sm text-gray-500">{{ order.delivery.phone }}</p>
+    <p class="text-sm text-gray-500">{{ order.delivery.address }}</p>
+  </div>
+  {% endif %}
+
+  {% if order_url %}
+  <div class="bg-white border border-gray-100 rounded-2xl p-5 mt-4">
+    <h2 class="font-semibold mb-2">Order QR code</h2>
+    <img src="{{ url_for('generate_qr', data=order_url) }}" width="180" height="180"
+         class="mx-auto" alt="Order QR code">
+    <p class="text-xs text-gray-400 mt-2">Show this to the rider — scanning opens this order.</p>
+  </div>
+  {% endif %}
+
+  <a href="{{ url_for('products_page') }}"
+     class="inline-block mt-6 text-sm text-orange-500 hover:underline">
+    Order more food
+  </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const totalSeconds = {{ order.eta_minutes }} * 60;
+  let remaining = totalSeconds;
+  const countdownEl = document.getElementById('countdown');
+  const progressEl = document.getElementById('progress-bar');
+
+  function render() {
+    if (remaining <= 0) {
+      countdownEl.textContent = "Arrived!";
+      progressEl.style.width = "100%";
+      return;
+    }
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    countdownEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    const elapsed = totalSeconds - remaining;
+    progressEl.style.width = `${(elapsed / totalSeconds) * 100}%`;
+  }
+
+  render();
+  const timer = setInterval(() => {
+    remaining -= 1;
+    render();
+    if (remaining <= 0) clearInterval(timer);
+  }, 1000);
+</script>
+{% endblock %}
